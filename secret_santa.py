@@ -75,7 +75,7 @@ class SecretSanta:
                     pairs.append((x,b.pop())) # remove item in b taken
 
         self.pairs = pairs
-        print(self.pairs)
+        # print(self.pairs)
 
         # format for the message
         content = "Dear %s,\n\nThis has been a very busy year for" + \
@@ -95,7 +95,7 @@ class SecretSanta:
             subject = "FROM SANTA!!"
             body =  content % pair
 
-            print(to, subject, body)
+            # print(to, subject, body)
 
             # ## Test 
             # print(to + "\nSecret Santa\n" + "Dear " + pair[0] +
@@ -145,12 +145,6 @@ class SecretSanta:
                     except IndexError:
                         grp = ''
 
-                    if not grp in self.groups: pass
-                    if not message.sent_from[0]['email'] in self.groups[grp].values(): pass
-
-                    if '[BCAST]' in message.subject:
-                        self.bcst(message, grp)
-
                     try:
                         msg_type = message.subject.split(' ')[1][1:-1]
                     except IndexError:
@@ -161,22 +155,29 @@ class SecretSanta:
                     except IndexError:
                         option = ''
 
-                    if msg_type is 'WSPR' and option in '[From_Secret_Santa]':
-                        self.wspr_to(message, grp)
-
-                    if msg_type is 'WSPR' and option in '[To_Secret_Santa]':
-                        self.wspr_from(message, grp)
-
-                    if msg_type is 'CRT' and option is self.passwd:
+                    if msg_type == 'CRT' and option == self.passwd:
                         self.crt(message, grp)
 
-                    if msg_type is 'ADD' and option is self.passwd:
+                    ## All other cmds require valid grp
+                    if not grp in self.groups: continue
+                    if not message.sent_from[0]['email'] in self.groups[grp].values(): continue
+
+                    if '[BCAST]' in message.subject:
+                        self.bcst(message, grp)
+
+                    if msg_type == 'WSPR' and option in '[From_Secret_Santa]':
+                        self.wspr_to(message, grp)
+
+                    if msg_type == 'WSPR' and option in '[To_Secret_Santa]':
+                        self.wspr_from(message, grp)
+
+                    if msg_type == 'ADD' and option == self.passwd:
                         self.add(message, grp)
 
-                    if msg_type is 'RM':
+                    if msg_type == 'RM':
                         self.rm(message, grp)
 
-                    if msg_type is 'ROLL' and option is 'Please_be_careful_1234567890' + self.passwd:
+                    if msg_type == 'ROLL' and option == 'Please_be_careful_1234567890' + self.passwd:
                         self.roll(grp)
 
             sleep(rate) # sleep for 30s to not spam email
@@ -220,13 +221,24 @@ class SecretSanta:
                 .send( to, subj, body )
 
     def crt(self, message, grp):
-        self.groups[grp] = dict(message.sent_from[0]['name'], message.sent_from[0]['email'])
+        self.groups[grp] = dict()
+        self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
+        # print(self.groups[grp])
+        # consider to send confirm email
+        print('CREATED', grp)
 
     def add(self, message, grp):
         self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
+        # print(self.groups)
+        print('ADDED')
 
     def rm(self, message, grp):
         self.groups[grp].pop( message.sent_from[0]['name'], None )
+        # print(self.groups)
+        print('REMOVED')
+        if not self.groups[grp]:
+            self.groups.pop(grp)
+            print('%s deleted' % grp)
 
     def wspr_to(self, message, grp):
         sender = message.sent_from[0]['email']
