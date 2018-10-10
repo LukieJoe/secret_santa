@@ -51,12 +51,14 @@ from time import sleep
 
 class SecretSanta:
     groups = dict()
+    reroll = dict()
     pairs = []
     passwd = '1234'
     
     def __init__(self, grp=None, starter=None, rate=None):
         if starter:
             self.groups[grp] = starter
+            self.reroll[grp] = dict()
             self.roll(grp)
         
         if rate: self.check_inbox(rate)
@@ -176,8 +178,14 @@ class SecretSanta:
                     if msg_type == 'RM':
                         self.rm(message, grp)
 
-                    if msg_type == 'ROLL' and option == 'Please_be_careful_1234567890' + self.passwd:
+                    if msg_type == 'PWROLL' and option == 'Please_be_careful_1234567890' + self.passwd:
                         self.roll(grp)
+
+                    if msg_type == 'ROLL':
+                        self.reroll[grp][message.sent_from[0]['name']] = 1
+
+                        if len(self.reroll[grp]) > 2 * len(self.groups[grp]) / 3:
+                            self.roll(grp)
 
             sleep(rate) # sleep for 30s to not spam email
 
@@ -221,6 +229,7 @@ class SecretSanta:
     def crt(self, message, grp):
         self.groups[grp] = dict()
         self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
+        self.reroll[grp] = dict()
         # print(self.groups[grp])
         # consider to send confirm email
         print('CREATED', grp)
@@ -233,11 +242,13 @@ class SecretSanta:
 
     def rm(self, message, grp):
         self.groups[grp].pop( message.sent_from[0]['name'], None )
+        self.reroll[grp].pop( message.sent_from[0]['name'], None )
         # print(self.groups)
         # confirm email
         print('REMOVED')
         if not self.groups[grp]:
             self.groups.pop(grp)
+            self.reroll.pop(grp)
             print('%s deleted' % grp)
 
     def wspr_to(self, message, grp):
