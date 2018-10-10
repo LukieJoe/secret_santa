@@ -83,10 +83,10 @@ with Imbox('imap.gmail.com',
     for uid, message in all_inbox_messages:
         # Every message is an object with the following keys
         '''
-        message.sent_from['name']
-        message.sent_from['email']
-        message.sent_to['name']
-        message.sent_to['email']
+        message.sent_from[]['name']
+        message.sent_from[]['email']
+        message.sent_to[]['name']
+        message.sent_to[]['email']
         message.subject
         message.headers
         message.message_id

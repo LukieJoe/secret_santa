@@ -8,5 +8,5 @@ Commands:
 - ADD: add to group
 - RM: remove from group
 - WSPR: send message to secret santa
-- ROLL: vote to reroll the pairings
+- ROLL: vote to reroll the pairings (NOT FEATURED)
 - BCST: send message to all in group
