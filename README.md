@@ -16,3 +16,4 @@ TODO
 - test wspr_from
 - test bcst
 - test roll
+- test reroll
