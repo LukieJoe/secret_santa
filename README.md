@@ -10,3 +10,9 @@ Commands:
 - WSPR: send message to secret santa
 - ROLL: vote to reroll the pairings (NOT FEATURED)
 - BCST: send message to all in group
+
+TODO
+- test wspr_to
+- test wspr_from
+- test bcst
+- test roll

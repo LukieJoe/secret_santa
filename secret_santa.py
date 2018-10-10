@@ -2,7 +2,6 @@
 
 ## TODO
 #
-# { } is dictionary for below
 # Groups -- use [GRP_NM] [MSG_TYPE] [OPTIONS]
 #        -- groups = { GRP_NM, {(name,email)} }
 #
@@ -33,7 +32,7 @@
 #
 #        -- groups[GRP_NM].pop( name, None )
 #
-# Request re-roll
+# Request re-roll (NOT ENCLUDED)
 #        -- REQUIRES a class to keep persistant collections
 #        -- GRP_NM = <group>
 #        -- MSG_TYPE = 'ROLL'
@@ -162,13 +161,13 @@ class SecretSanta:
                     if not grp in self.groups: continue
                     if not message.sent_from[0]['email'] in self.groups[grp].values(): continue
 
-                    if '[BCAST]' in message.subject:
+                    if 'BCAST' in message.subject:
                         self.bcst(message, grp)
 
-                    if msg_type == 'WSPR' and option in '[From_Secret_Santa]':
+                    if msg_type == 'WSPR' and option in '[From] Secret Santa]':
                         self.wspr_to(message, grp)
 
-                    if msg_type == 'WSPR' and option in '[To_Secret_Santa]':
+                    if msg_type == 'WSPR' and option in '[To] Secret Santa]':
                         self.wspr_from(message, grp)
 
                     if msg_type == 'ADD' and option == self.passwd:
@@ -213,7 +212,6 @@ class SecretSanta:
                 ', they can reply back (ANONOMOUSLY)\n' + \
                 '\t  - OPTION = From: sends message to person recieving gift from you\n' + \
                 '\t  - OPTION = To: sends message to person giving you a gift\n' + \
-                '\t[ROLL]: vote to reroll the pairs\n' + \
                 '\t[BCST]: send a message to all emails in the group\n'
 
         yagmail.SMTP('schultechristmas@gmail.com',
@@ -230,11 +228,13 @@ class SecretSanta:
     def add(self, message, grp):
         self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
         # print(self.groups)
+        # confirm email
         print('ADDED')
 
     def rm(self, message, grp):
         self.groups[grp].pop( message.sent_from[0]['name'], None )
         # print(self.groups)
+        # confirm email
         print('REMOVED')
         if not self.groups[grp]:
             self.groups.pop(grp)
@@ -244,7 +244,7 @@ class SecretSanta:
         sender = message.sent_from[0]['email']
         name = list(self.groups[grp].keys())[list(self.groups[grp].values()).index( sender )]
         whisper_dst = self.groups[grp][ self.pairs[name] ]
-        subj = '[%s] [WSPR] [To Secret Santa]' % (grp,)
+        subj = '[%s] [WSPR] [To] Secret Santa' % (grp,)
         # look for Sent -> delete everything after that
         body = message.body['plain'] ## strip this of end stuff -- harder to weed out sender
         yagmail.SMTP('schultechristmas@gmail.com',
@@ -257,7 +257,7 @@ class SecretSanta:
         name = list(self.groups[grp].keys())[list(self.groups[grp].values()).index( sender )]
         whisper_name = list(pairs_dict.keys())[list(pairs_dict.values()).index( name )]
         whisper_email =  self.groups[grp][whisper_name]
-        subj = '[%s] [WSPR] [From Secret Santa]' % (grp,)
+        subj = '[%s] [WSPR] [From] Secret Santa' % (grp,)
         # look for Sent -> delete everything after that
         body = message.body['plain'] ## strip this of end stuff -- harder to weed out sender
         yagmail.SMTP('schultechristmas@gmail.com',
