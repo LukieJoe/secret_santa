@@ -53,6 +53,7 @@ from time import sleep
 class SecretSanta:
     groups = dict()
     pairs = []
+    passwd = '1234'
     
     def __init__(self, grp=None, starter=None, rate=None):
         if starter:
@@ -166,16 +167,16 @@ class SecretSanta:
                     if msg_type is 'WSPR' and option in '[To_Secret_Santa]':
                         self.wspr_from(message, grp)
 
-                    if msg_type is 'CRT' and option is '1234':
+                    if msg_type is 'CRT' and option is self.passwd:
                         self.crt(message, grp)
 
-                    if msg_type is 'ADD' and option is '1234':
+                    if msg_type is 'ADD' and option is self.passwd:
                         self.add(message, grp)
 
                     if msg_type is 'RM':
                         self.rm(message, grp)
 
-                    if msg_type is 'ROLL' and option is 'Please_be_careful_1234567890':
+                    if msg_type is 'ROLL' and option is 'Please_be_careful_1234567890' + self.passwd:
                         self.roll(grp)
 
             sleep(rate) # sleep for 30s to not spam email
