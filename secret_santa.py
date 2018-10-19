@@ -42,27 +42,58 @@
 #        -- if roll_count > 2 * len(groups[GRP_NM]) / 3
 #            -- BCAST "Reroll has a 2/3 vote -- new pairs to be assigned"
 #            -- reroll()
+#
+# SQLITE
+#
+#   GRPS                            {GRP}
+# - list all groups               - a table per GRP in GRPS
+#                                 - NAME, EMAIL
+#
+
 
 import yagmail
 from imbox import Imbox
 
 from random import shuffle
 from time import sleep
+import sqlite3
+from contextlib import closing
 
 class SecretSanta:
+    db = sqlite3.connect('santaslist.db')
+
     groups = dict()
     reroll = dict()
     pairs = []
     passwd = '1234'
+    sender = 'schultechristmas@gmail.com'
+    oauth = '~/.santa/oauth2_cred.json'
     
-    def __init__(self, grp=None, starter=None, rate=None):
-        if starter:
-            self.groups[grp] = starter
-            self.reroll[grp] = dict()
-            self.roll(grp)
+    def __init__(self, sender=(None,None), rate=None):
+        if sender:
+            self.sender = sender[0]
+            self.oauth = sender[1]
+
+        ## use sqlite
+        grps = []
+        with closing(self.db.cursor()) as c:
+            c.execute('SELECT * FROM grps')
+
+            for grp in c:
+                grps.append( grp[0] )
+
+            for grp in grps:
+                c.execute('SELECT * FROM %s' % (grp,))
+                self.groups[grp] = dict( c.fetchall() )
+
+        print( self.groups )
+
+        self.reroll[grp] = dict()
+        self.roll(grp)
         
         if rate: self.check_inbox(rate)
         else: self.check_inbox()
+
         
     def roll(self, grp):
         names = [x for x in self.groups[grp]]
@@ -105,17 +136,13 @@ class SecretSanta:
             #         " Please reply ASAP!\n\nSanta's NO.1 elf,\nBuddy")
 
             # ## Deploy with this
-            # yagmail.SMTP('schultechristmas@gmail.com',
-            #             oauth2_file='~/.santa/oauth2_cred.json')\
-            #              .send(to, subject, body)
+            self.send(to, subject, body)
 
             # ## Test with this
-            # yagmail.SMTP('schultechristmas@gmail.com',
-            #               oauth2_file='~/.santa/oauth2_cred.json')\
-            #                 .send(to, "Secret Santa", "Dear " + x[0] +
-            #                        ",\n\nThis is a test of the emergency" +
-            #                        " Santa Help Network.\n<b>Action Required.</b>" +
-            #                        " Please reply ASAP!\n\nSanta's NO.1 elf,\nBuddy")
+            # self.send(to, "Secret Santa", "Dear " + x[0] +
+            #           ",\n\nThis is a test of the emergency" +
+            #           " Santa Help Network.\n<b>Action Required.</b>" +
+            #           " Please reply ASAP!\n\nSanta's NO.1 elf,\nBuddy")
     
     def check_inbox(self, rate=30):
         import keyring
@@ -182,12 +209,17 @@ class SecretSanta:
                         self.roll(grp)
 
                     if msg_type == 'ROLL':
-                        self.reroll[grp][message.sent_from[0]['name']] = 1
-
+                        self.reroll[grp].update( message.sent_from[0]['name'] )
+                        # 2/3 majority
                         if len(self.reroll[grp]) > 2 * len(self.groups[grp]) / 3:
                             self.roll(grp)
 
             sleep(rate) # sleep for 30s to not spam email
+
+    def send(self, to, subj, body):
+        print( 'SENT\n', to, subj, body )
+        # yagmail.SMTP( self.sender, oauth2_file=self.oauth)\
+        #         .send( to, subj, body )
 
     def bcst(self, message, grp):
         names = [x for x in self.groups[grp]]
@@ -195,12 +227,12 @@ class SecretSanta:
             # print(n[x], '[Alert] Secret Santa', 'demo') #message.body['plain']
             sender = message.sent_from[0]['email']
             name = list(self.groups[grp].keys())[list(self.groups[grp].values()).index( sender )]
+
             to = self.groups[grp][name]
             subj = '[Alert] Secret Santa'
             body = '<b>Broadcast Message from %s,</b>\n\n%s' % ( name, message.body['plain'] )
-            yagmail.SMTP('schultechristmas@gmail.com',
-                    oauth2_file='~/.santa/oauth2_cred.json')\
-                    .send( to, subj, body )
+
+            self.send( to, subj, body )
 
     def cmd(self, message):
         # print(message.body['plain'])
@@ -222,63 +254,93 @@ class SecretSanta:
                 '\t  - OPTION = To: sends message to person giving you a gift\n' + \
                 '\t[BCST]: send a message to all emails in the group\n'
 
-        yagmail.SMTP('schultechristmas@gmail.com',
-                oauth2_file='~/.santa/oauth2_cred.json')\
-                .send( to, subj, body )
+        self.send( to, subj, body )
 
     def crt(self, message, grp):
+        with closing(self.db.cursor()) as c:
+            # Add table {GRP}
+            c.execute('CREATE TABLE %s (name text, email text)' % 
+                (grp,) )
+
+            # Add entry to {GRP}
+            c.execute('INSERT INTO %s VALUES (?, ?)' % grp,
+                (message.sent_from[0]['name'], message.sent_from[0]['email']) )
+
+            # Add entry to GRPS
+            c.execute('INSERT INTO grps VALUES (?)', (grp,) )
+
         self.groups[grp] = dict()
         self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
-        self.reroll[grp] = dict()
+        self.reroll[grp] = set()
+
         # print(self.groups[grp])
         # consider to send confirm email
         print('CREATED', grp)
 
     def add(self, message, grp):
+        with closing(self.db.cursor()) as c:
+            # Add entry to {GRP}
+            c.execute('INSERT INTO %s VALUES (?, ?)' % grp,
+                (message.sent_from[0]['name'], message.sent_from[0]['email']) )
+
         self.groups[grp][message.sent_from[0]['name']] = message.sent_from[0]['email']
+
         # print(self.groups)
         # confirm email
         print('ADDED')
 
     def rm(self, message, grp):
+        with closing(self.db.cursor()) as c:
+            # rm entry from {GRP}
+            c.execute('DELETE FROM %s WHERE email=?' % grp,
+                (message.sent_from[0]['email'],) )
+        
+
         self.groups[grp].pop( message.sent_from[0]['name'], None )
         self.reroll[grp].pop( message.sent_from[0]['name'], None )
         # print(self.groups)
         # confirm email
+
         print('REMOVED')
         if not self.groups[grp]:
             self.groups.pop(grp)
             self.reroll.pop(grp)
+
+            with closing(self.db.cursor()) as c:
+                # Rm entry from GRPS ( if necessary )
+                c.execute('DELETE FROM grps VALUES (?)', (grp,) )
+
             print('%s deleted' % grp)
 
     def wspr_to(self, message, grp):
         sender = message.sent_from[0]['email']
         name = list(self.groups[grp].keys())[list(self.groups[grp].values()).index( sender )]
+
         whisper_dst = self.groups[grp][ self.pairs[name] ]
         subj = '[%s] [WSPR] [To] Secret Santa' % (grp,)
         # look for Sent -> delete everything after that
         body = message.body['plain'] ## strip this of end stuff -- harder to weed out sender
-        yagmail.SMTP('schultechristmas@gmail.com',
-                oauth2_file='~/.santa/oauth2_cred.json')\
-                .send( whisper_dst, subj, body )
+
+        self.send( whisper_dst, subj, body )
         
     def wspr_from(self, message, grp):
         pairs_dict = dict(self.pairs)
         sender = message.sent_from[0]['email'] # replys back
+
         name = list(self.groups[grp].keys())[list(self.groups[grp].values()).index( sender )]
         whisper_name = list(pairs_dict.keys())[list(pairs_dict.values()).index( name )]
+
         whisper_email =  self.groups[grp][whisper_name]
         subj = '[%s] [WSPR] [From] Secret Santa' % (grp,)
         # look for Sent -> delete everything after that
         body = message.body['plain'] ## strip this of end stuff -- harder to weed out sender
-        yagmail.SMTP('schultechristmas@gmail.com',
-                oauth2_file='~/.santa/oauth2_cred.json')\
-                .send( whisper_email, subj, body )
+
+        self.send( whisper_email, subj, body )
     
 if __name__ == '__main__':
     ## fill this from subscribers list ??
-    emails = dict([('Luke Joseph', 'lukepaltzer@gmail.com'),
-                    ('Luke', 'landers345@gmail.com')])
+    # emails = dict([('Luke Joseph', 'lukepaltzer@gmail.com'),
+                    # ('Luke', 'landers345@gmail.com')])
                     # ('Dev','devpaltzer@gmail.com'),
                     # ('Sean', 'seanpaltzer@gmail.com'),
                     # ('Martha', 'mspaltzer@gmail.com'),
@@ -296,7 +358,7 @@ if __name__ == '__main__':
     #    Have all members send email to Emailer
     #    Then send the roll cmd
 
-    s = SecretSanta(grp='SC', starter=emails, rate=0)
+    s = SecretSanta( rate=0 )
 
 '''
     ## take only first values from n
