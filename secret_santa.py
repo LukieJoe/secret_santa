@@ -84,7 +84,7 @@ class SecretSanta:
             if DEBUG: print(to, subject, body)
             else: self.send(to, subject, body)
 
-    def send(self, to, subj, body): 
+    def send(self, to, subj, body):
         yagmail.SMTP( self.sender, oauth2_file=self.oauth )\
                .send( to, subj, body )
 
@@ -352,7 +352,7 @@ if __name__ == '__main__':
 #        -- MSG_TYPE = 'ADD'
 #        -- OPTIONS = 'password'
 #        -- groups[GRP_NM][message.sent_from[0]['name']] = message.sent_from[0]['email']
-# 
+#
 # Remove from group
 #        -- GRP_NM = <group>
 #        -- MSG_TYPE = 'RM'

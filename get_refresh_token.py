@@ -138,7 +138,7 @@ def send_mail(fromaddr, toaddr, subject, message):
     server.sendmail(fromaddr, toaddr, msg.as_string())
     server.quit()
 
-# GOOGLE_CLIENT_ID = secrets['google_client_id'] 
+# GOOGLE_CLIENT_ID = secrets['google_client_id']
 # GOOGLE_CLIENT_SECRET = secrets['google_client_secret']
 # GOOGLE_REFRESH_TOKEN = secrets['google_refresh_token']
 
