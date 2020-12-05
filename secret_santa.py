@@ -95,7 +95,7 @@ class SecretSanta:
 
         while True:
             with Imbox('imap.gmail.com',
-                username='schultechristmas@gmail.com',
+                username= self.sender,
                 password= keyring.get_password( 'system', 'schultechristmas' ),
                 ssl=True,
                 ssl_context=None,
