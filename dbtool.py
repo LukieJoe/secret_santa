@@ -14,7 +14,7 @@ with sqlite3.connect('santaslist.db') as db:
         #c.execute('''CREATE TABLE SC
         #         (name text, email text)''')
 
-        if len(argv) == 3: 
+        if len(argv) == 3:
             stmt = """INSERT INTO SC VALUES('%s', '%s')""" % (argv[1], argv[2])
             print(stmt)
             c.execute(stmt)
