@@ -311,12 +311,18 @@ if __name__ == '__main__':
         elif k in ('-n', '--no-client'): CLIENT = False
         elif k in ('-w', '--with-client'): CLIENT = True
         elif k in ('-h', '--help'):
-            print('default state: CLIENT(True) DEBUG(True) CONTENT(test.txt) ASSIGN_PAIRS(False)')
+            print('state: CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s)\n' % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS))
+            print('protip:\n  use -h as last arg to inspect state w/out actually running anything')
+            print('  CLIENT := calls SecretSanta()')
+            print('  DEBUG := print statements, wont call send()')
+            print('  CONTENT := loaded content for email body')
+            print('  PAIRED := match content on %s from rolls')
+            print()
             print('usage:')
-            for i in usage: print('-%s, --%s' % (i[0], i))
+            for i in usage: print('  -%s, --%s' % (i[0], i))
             exit(0)
 
-    print('CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRS(%s)' % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS))
+    print('CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s)\n' % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS))
 
     for k,v in opts:
         if k in ('-s', '--send'):
