@@ -14,19 +14,6 @@ with sqlite3.connect('santaslist.db') as db:
         #c.execute('''CREATE TABLE SC
         #         (name text, email text)''')
 
-        #c.execute("""INSERT INTO SC
-        #         VALUES ('Luke Joseph', 'lukepaltzer@gmail.com')""")
-
-        '''
-        c.execute("""INSERT INTO SC
-                VALUES ('Sean', 'seanpaltzer@gmail.com'),
-                       ('Martha', 'mspaltzer@gmail.com'),
-                       ('Mary', 'maryv0444@gmail.com'),
-                       ('Sidney', 'sidvinc02@gmail.com'),
-                       ('Holli', 'hollimorris18@gmail.com'),
-                       ('Julie', 'jschulte13@yahoo.com'),
-                       ('Luke Leon', 'luke_leon@yahoo.com')""")
-        '''
         if len(argv) == 3: 
             stmt = """INSERT INTO SC VALUES('%s', '%s')""" % (argv[1], argv[2])
             print(stmt)
