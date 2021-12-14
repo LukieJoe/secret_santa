@@ -145,7 +145,7 @@ def send_mail(fromaddr, toaddr, subject, message):
 if __name__ == '__main__':
     if len(argv) == 1:
         print('No refresh token found, obtaining one')
-        cred_path = '%s/.santa/oauth2_cred.json' % Path.home()
+        cred_path = '.santa/oauth2_cred.json'
         with open(cred_path, 'r') as fp:
             secrets = json.load(fp)
 

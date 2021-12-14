@@ -10,22 +10,22 @@ import sqlite3
 from contextlib import closing
 from getopt import getopt
 
-DRYRUN = ('test.txt', False)
-FULL_CONTENT = ('content.txt', True)
+DRYRUN = ('.santa/test.txt', False)
+FULL_CONTENT = ('.santa/content.txt', True)
 
 CLIENT = True
 DEBUG = True
 CONTENT, ASSIGN_PAIRS = DRYRUN
 
 class SecretSanta:
-    db = sqlite3.connect('santaslist.db')
+    db = sqlite3.connect('.santa/santaslist.db')
 
     groups = dict()
     reroll = dict()
     pairs = []
     passwd = '1234'
     sender = 'schultechristmas@gmail.com'
-    oauth = '~/.santa/oauth2_cred.json'
+    oauth = '.santa/oauth2_cred.json'
     
     def __init__(self, sender=(None,None), rate=None):
         if not sender == (None, None):
@@ -292,8 +292,8 @@ def get_pair(c, p):
 
 def send(email):
     if DEBUG: print(get_content())
-    yagmail.SMTP('schultechristmas@gmail.com', oauth2_file='~/.santa/oauth2_cred.json')\
-           .send( email, 'A Test', get_content() )
+    else: yagmail.SMTP('schultechristmas@gmail.com', oauth2_file='.santa/oauth2_cred.json')\
+                 .send( email, 'A Test', get_content() )
 
 
 if __name__ == '__main__':

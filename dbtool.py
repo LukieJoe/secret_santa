@@ -6,7 +6,7 @@ from sys import argv
 
 print("%s usage:\n  ./ -- print db\n  ./ <name> -- delete where name (case sensitive)\n  ./ <name> <email> -- insert name,email into db\n" % argv[0])
 
-with sqlite3.connect('santaslist.db') as db:
+with sqlite3.connect('.santa/santaslist.db') as db:
     with closing(db.cursor()) as c:
         #c.execute('''CREATE TABLE grps
         #         (grp text)''')
