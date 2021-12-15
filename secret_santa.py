@@ -6,6 +6,7 @@ from imbox import Imbox
 from random import shuffle
 from time import sleep
 from sys import argv
+from os import getenv
 import sqlite3
 from contextlib import closing
 from getopt import getopt
@@ -17,21 +18,20 @@ CLIENT = True
 DEBUG = True
 CONTENT, ASSIGN_PAIRS = DRYRUN
 
+EMAIL = getenv('SANTA_EMAIL')
+OAUTH = getenv('SANTA_OAUTH') if getenv('SANTA_OAUTH') else '.santa/oauth2_cred.json'
+DB_PATH = getenv('SANTA_DB_PATH') if getenv('SANTA_DB_PATH') else '.santa/santaslist.db'
+KEYRING_USER = getenv('SANTA_KEYRING_USER')
+
 class SecretSanta:
-    db = sqlite3.connect('.santa/santaslist.db')
+    db = sqlite3.connect(DB_PATH)
 
     groups = dict()
     reroll = dict()
     pairs = []
     passwd = '1234'
-    sender = 'schultechristmas@gmail.com'
-    oauth = '.santa/oauth2_cred.json'
-    
-    def __init__(self, sender=(None,None), rate=None):
-        if not sender == (None, None):
-            self.sender = sender[0]
-            self.oauth = sender[1]
 
+    def __init__(self, rate=None):
         ## use sqlite
         grps = []
         with closing(self.db.cursor()) as c:
@@ -85,7 +85,7 @@ class SecretSanta:
             else: self.send(to, subject, body)
 
     def send(self, to, subj, body):
-        yagmail.SMTP( self.sender, oauth2_file=self.oauth )\
+        yagmail.SMTP( EMAIL, oauth2_file=OAUTH )\
                .send( to, subj, body )
 
         print( 'SENT to ', to )
@@ -95,8 +95,8 @@ class SecretSanta:
 
         while True:
             with Imbox('imap.gmail.com',
-                username= self.sender,
-                password= keyring.get_password( 'system', 'schultechristmas' ),
+                username= EMAIL,
+                password= keyring.get_password( 'system', KEYRING_USER ),
                 ssl=True,
                 ssl_context=None,
                 starttls=False) as imbox:
@@ -292,11 +292,13 @@ def get_pair(c, p):
 
 def send(email):
     if DEBUG: print(get_content())
-    else: yagmail.SMTP('schultechristmas@gmail.com', oauth2_file='.santa/oauth2_cred.json')\
+    else: yagmail.SMTP( EMAIL, oauth2_file=OAUTH )\
                  .send( email, 'A Test', get_content() )
 
 
 if __name__ == '__main__':
+
+    state_format = 'CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s) EMAIL(%s) USER(%s)\n'
 
     usage = ['help', 'with-client', 'no-client', 'test', 'full', 'debug', 'release', 'send=', 'content=', 'paired', 'unpaired']
     opts, _ = getopt(argv[1:], 'hwntfdrs:c:pu', usage)
@@ -311,7 +313,7 @@ if __name__ == '__main__':
         elif k in ('-n', '--no-client'): CLIENT = False
         elif k in ('-w', '--with-client'): CLIENT = True
         elif k in ('-h', '--help'):
-            print('state: CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s)\n' % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS))
+            print('state:\n  ', state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, KEYRING_USER))
             print('protip:\n  use -h as last arg to inspect state w/out actually running anything')
             print('  CLIENT := calls SecretSanta()')
             print('  DEBUG := print statements, wont call send()')
@@ -322,7 +324,7 @@ if __name__ == '__main__':
             for i in usage: print('  -%s, --%s' % (i[0], i))
             exit(0)
 
-    print('CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s)\n' % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS))
+    print(state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, KEYRING_USER))
 
     for k,v in opts:
         if k in ('-s', '--send'):

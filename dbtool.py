@@ -3,10 +3,13 @@
 import sqlite3
 from contextlib import closing
 from sys import argv
+from os import getenv
 
 print("%s usage:\n  ./ -- print db\n  ./ <name> -- delete where name (case sensitive)\n  ./ <name> <email> -- insert name,email into db\n" % argv[0])
 
-with sqlite3.connect('.santa/santaslist.db') as db:
+DB_PATH = getenv('SANTA_DB_PATH') if getenv('SANTA_DB_PATH') else '.santa/santaslist.db'
+
+with sqlite3.connect(DB_PATH) as db:
     with closing(db.cursor()) as c:
         #c.execute('''CREATE TABLE grps
         #         (grp text)''')
