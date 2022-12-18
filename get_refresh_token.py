@@ -25,7 +25,7 @@ REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 from pathlib import Path
 from sys import argv
-from os import rename
+from os import rename, remove
 
 def command_to_url(command):
     return '%s/%s' % (GOOGLE_ACCOUNTS_BASE_URL, command)
@@ -52,6 +52,7 @@ def generate_permission_url(client_id, scope='https://mail.google.com/'):
     params['redirect_uri'] = REDIRECT_URI
     params['scope'] = scope
     params['response_type'] = 'code'
+    params['ack_oob_shutdown'] = '2022-10-03'
     return '%s?%s' % (command_to_url('o/oauth2/auth'), url_format_params(params))
 
 
@@ -154,6 +155,8 @@ if __name__ == '__main__':
         print('Set the following as your GOOGLE_REFRESH_TOKEN:', refresh_token)
         secrets['google_refresh_token'] = refresh_token
 
+        input('confirm delete cred backup')
+        remove(cred_path + '.old')
         rename(cred_path, cred_path + '.old')
 
         with open(cred_path, 'w') as fp:
@@ -161,5 +164,5 @@ if __name__ == '__main__':
 
         exit()
 
-    print('send_mail is not used')
+    # print('send_mail is not used')
     # send_mail(from, to, subject, message)
