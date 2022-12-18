@@ -42,4 +42,3 @@ with sqlite3.connect(DB_PATH) as db:
             print( "total: %s\n" % len(tmp) )
             for i in tmp: print(i)
             print()
-

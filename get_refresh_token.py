@@ -21,6 +21,7 @@ from email.mime.text import MIMEText
 import lxml.html
 
 GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
+# TODO figure out how to replace this, it will be depricated in 2023
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 from pathlib import Path
@@ -163,6 +164,3 @@ if __name__ == '__main__':
             json.dump(secrets, fp)
 
         exit()
-
-    # print('send_mail is not used')
-    # send_mail(from, to, subject, message)
