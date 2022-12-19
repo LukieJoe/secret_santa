@@ -1,5 +1,5 @@
 cachetools==4.2.4
-certifi==2021.10.8
+certifi>=2022.12.07
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.9
@@ -12,7 +12,7 @@ imbox==0.9.8
 importlib-metadata==4.8.2
 jeepney==0.7.1
 keyring==23.4.0
-lxml==4.7.1
+lxml>=4.9.1
 premailer==3.10.0
 pycparser==2.21
 requests==2.26.0

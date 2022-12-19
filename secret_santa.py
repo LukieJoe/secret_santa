@@ -253,8 +253,8 @@ if __name__ == '__main__':
 
     state_format = 'CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s) EMAIL(%s) GROUP(%s)\n'
 
-    usage = ['help', 'with-client', 'no-client', 'test', 'full', 'debug', 'release', 'send=', 'content=', 'paired', 'unpaired', 'group=', 'get-token-secrets', 'resend=']
-    opts, _ = getopt(argv[1:], 'hwntfdrs:c:pug:', usage)
+    usage = ['help', 'with-client', 'no-client', 'test', 'full', 'debug', 'release', 'send=', 'content=', 'paired', 'unpaired', 'group=', 'resend=', 'get-token-secrets']
+    opts, _ = getopt(argv[1:], 'hwntfdrs:c:pug:x:z', usage)
     for k,v in opts:
         if k in ('-t', '--test'): CONTENT, ASSIGN_PAIRS = DRYRUN
         elif k in ('-f', '--full'): CONTENT, ASSIGN_PAIRS = FULL_CONTENT
@@ -283,12 +283,13 @@ if __name__ == '__main__':
 
     print(state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, GROUP))
 
+    # complex operations
     for k,v in opts:
         if k in ('-s', '--send'):
             CLIENT = False
             send(v, 'A Test %s' % year(), get_content())
 
-        elif k in ('--resend'):
+        elif k in ('-x', '--resend'):
             CLIENT = False
             # search the sent inbox for <email> | "<email>,<subject>"
             args = v.split(',')
@@ -303,7 +304,7 @@ if __name__ == '__main__':
                 preview  = len(shame) + 30 # get a nice window that doesnt reveal too much
                 send(new_to, new_subj, new_body, preview=preview)
 
-        elif k in ('--get-token-secrets'):
+        elif k in ('-z', '--get-token-secrets'):
             CLIENT = False
             # Generate and authorize OAuth2 secrets
             # results will be dumped to OAUTH env
