@@ -1,24 +1,35 @@
 # secret_santa
 
-A simple auto emailer<br/>
+A simple auto emailer for secret santa<br/>
 
-Commands:
-- CMD: list commands
-- CRT: create a group
-- ADD: add to group
-- RM: remove from group
-- WSPR: send message to secret santa
-- ROLL: vote to reroll the pairings
-- BCST: send message to all in group
+initial setup
+```
+source ./venv/bin/activate
+pip install -r requirements.txt
+```
 
-TODO
-- test add
-- test crt
-- test rm
-- test wspr_to
-- test wspr_from
-- test bcst
-- test roll
-- test reroll
+required ENV
+```
+export SANTA_EMAIL=<gmail>
+export SANTA_GROUP=<DBNAME>
+export SANTA_CONTENT=<template for full email>
+export SANTA_TEST_CONTENT=<template for test email>
+export SANTA_OAUTH=<path to secrets file>
+export SANTA_DB_PATH=<path to database>
+```
 
-- deploy with heroku
+setup db and add each participant
+```
+./dbtool.py create <DBNAME>
+SANTA_GROUP=<DBNAME> ./dbtool.py <name> <email>
+```
+
+sample usage. remove `r` flag for dry run
+```
+./secret_santa -z           # get token secrets for SANTA_EMAIL and dump into SANTA_OAUTH, must happen first
+./secret_santa -rts <email> # send test content to email
+./secret_santa -rfs <email> # send full content to email
+./secret_santa -rt          # send the test content to all participants
+./secret_santa -rf          # send the full content to all participants
+./secret_santa -rx <email>  # resend content for <email> to <email> with some spite
+```

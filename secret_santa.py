@@ -278,7 +278,7 @@ if __name__ == '__main__':
             print('usage:')
             for i in usage: print('  -%s, --%s' % (i[0], i))
             print()
-            print('.santa/notes')
+            print('source .santa/notes')
             exit(0)
 
     print(state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, GROUP))
