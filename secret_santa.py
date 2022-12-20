@@ -35,7 +35,7 @@ class SecretSanta:
 
     def __init__(self):
         with closing(self.db.cursor()) as c:
-            c.execute('SELECT * FROM %s' % (GROUP,))
+            c.execute(f'SELECT * FROM {GROUP}')
             # dict of name -> email
             self.participants = dict( c.fetchall() )
 
@@ -55,12 +55,12 @@ class SecretSanta:
 
         self.pairs = pairs
 
-        if DEBUG: print("%s\n" % self.pairs)
+        if DEBUG: print(f"{self.pairs}\n")
 
     def send_pairs(self):
         for pair in self.pairs:
             to = self.participants[pair[0]]      # get left email
-            subject = "FROM SANTA!! %s" % year() # prevent weird reply nonsense
+            subject = f"FROM SANTA!! {year()}"   # prevent weird reply nonsense
             body = get_pair(get_content(), pair) # if ASSIGN_PAIRS get_content() % pair
 
             send(to, subject, body)
@@ -84,9 +84,9 @@ def send(to, subj, body, preview=-1):
                .send( to, subj, body )
         print( 'SENT to ', to )
 
-GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
 # TODO figure out how to replace this, it will be depricated in 2023
-GOOGLE_REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+GOOGLE_OAUTH_REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
 class OAUTH2:
     secrets = dict()
     def __init__(self):
@@ -105,7 +105,9 @@ class OAUTH2:
     def url_format_params(params):
         param_fragments = []
         for param in sorted(params.items(), key=lambda x: x[0]):
-            param_fragments.append('%s=%s' % (param[0], OAUTH2.url_escape(param[1])))
+            key = param[0]
+            val = OAUTH2.url_escape(param[1])
+            param_fragments.append(f'{key}={val}')
         return '&'.join(param_fragments)
 
     @staticmethod
@@ -122,7 +124,7 @@ class OAUTH2:
     def generate_permission_url(self, scope='https://mail.google.com/'):
         params = {}
         params['client_id'] = self.secrets['google_client_id']
-        params['redirect_uri'] = GOOGLE_REDIRECT_URI
+        params['redirect_uri'] = GOOGLE_OAUTH_REDIRECT_URI
         params['scope'] = scope
         params['response_type'] = 'code'
         params['ack_oob_shutdown'] = '2022-10-03'
@@ -135,7 +137,7 @@ class OAUTH2:
         params['client_id'] = self.secrets['google_client_id']
         params['client_secret'] = self.secrets['google_client_secret']
         params['code'] = authorization_code
-        params['redirect_uri'] = GOOGLE_REDIRECT_URI
+        params['redirect_uri'] = GOOGLE_OAUTH_REDIRECT_URI
         params['grant_type'] = 'authorization_code'
         request_url = self.command_to_url('o/oauth2/token')
         response = urllib.request.urlopen(request_url, urllib.parse.urlencode(params).encode('UTF-8')).read().decode('UTF-8')
@@ -245,8 +247,8 @@ class IMTP:
         imap_conn.authenticate('XOAUTH2', lambda x: auth_string)
 
         imap_conn.select('"[Gmail]/Sent Mail"')
-        search_subject = ' SUBJECT "%s"' % subject if subject else ''
-        results = self.fetch(imap_conn, '(TO "%s"%s)' % (to, search_subject), 1)
+        maybe_subject = f' SUBJECT "{subject}"' if subject else ''
+        results = self.fetch(imap_conn, f'(TO "{to}"{maybe_subject})', 1)
 
         imap_conn.close()
         imap_conn.logout()
@@ -254,7 +256,7 @@ class IMTP:
         return results
 
 def print_state():
-    print('DEBUG(%s) ASSIGN_PAIRS(%s) CONTENT(%s) EMAIL(%s) GROUP(%s)\n' % (DEBUG, ASSIGN_PAIRS, CONTENT, EMAIL, GROUP))
+    print(f'{DEBUG=} {ASSIGN_PAIRS=} {CONTENT=} {EMAIL=} {GROUP=}\n')
 
 def print_help(usage):
     print('state:\n  ', end='')
@@ -262,12 +264,12 @@ def print_help(usage):
     print('protip:\n  use -h as last arg to inspect state w/out actually running anything')
     print('  DEBUG := print statements, wont call send()')
     print('  PAIRED := match content on %s from rolls')
-    print('  CONTENT := loaded content for email body, from ENV SANTA_CONTENT | SANTA_TEST_CONTENT')
+    print('  CONTENT := loaded content for email body, template containing 2 %s, from ENV SANTA_CONTENT | SANTA_TEST_CONTENT')
     print('  EMAIL := the gmail, from ENV SANTA_EMAIL')
     print('  GROUP := the specified list of participants, from ENV SANTA_GROUP')
     print()
     print('usage:')
-    for i in usage: print('  --%s' % i)
+    for flag in usage: print(f'  --{flag}')
     print()
     print('source .santa/notes')
     exit(0)
@@ -288,7 +290,7 @@ if __name__ == '__main__':
     # complex operations
     for k,v in opts:
         if k in ('-s', '--send'):
-            send(v, 'A Test %s' % year(), get_content())
+            send(v, f'A Test {year()}', get_content())
             exit(0)
         elif k in ('-x', '--resend'):
             # search the sent inbox for <email> | "<email>,<subject>"
@@ -298,7 +300,7 @@ if __name__ == '__main__':
 
             for fields,body in results:
                 new_to   = fields['to_field']
-                new_subj = fields['subj_field'] + ' -- Second Notice for %s' % year()
+                new_subj = fields['subj_field'] + f' -- Second Notice for {year()}'
                 shame    = 'It seems like someone failed to get the memo :/<br><br>'
                 new_body = shame + body
                 preview  = len(shame) + 30 # get a nice window that doesnt reveal too much
