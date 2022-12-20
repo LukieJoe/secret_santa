@@ -24,7 +24,7 @@ CONTENT, ASSIGN_PAIRS = DRYRUN
 
 GROUP = getenv('SANTA_GROUP')
 EMAIL = getenv('SANTA_EMAIL')
-OAUTH = getenv('SANTA_OAUTH') if getenv('SANTA_OAUTH') else '.santa/oauth2_cred.json'
+OAUTH_PATH = getenv('SANTA_OAUTH') if getenv('SANTA_OAUTH') else '.santa/oauth2_cred.json'
 DB_PATH = getenv('SANTA_DB_PATH') if getenv('SANTA_DB_PATH') else '.santa/santaslist.db'
 
 class SecretSanta:
@@ -80,39 +80,41 @@ def get_pair(c, p):
 def send(to, subj, body, preview=-1):
     if DEBUG: print(to, subj, body[0:preview])
     else:
-        yagmail.SMTP( EMAIL, oauth2_file=OAUTH )\
+        yagmail.SMTP( EMAIL, oauth2_file=OAUTH_PATH )\
                .send( to, subj, body )
         print( 'SENT to ', to )
 
-
-class OAUTHHelper:
-    GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
-    # TODO figure out how to replace this, it will be depricated in 2023
-    REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
-
-    username = EMAIL
+GOOGLE_ACCOUNTS_BASE_URL = 'https://accounts.google.com'
+# TODO figure out how to replace this, it will be depricated in 2023
+GOOGLE_REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+class OAUTH2:
     secrets = dict()
     def __init__(self):
-        with open(OAUTH, 'r') as fp:
+        with open(OAUTH_PATH, 'r') as fp:
             self.secrets = json.load(fp)
 
-    def url_unescape(self, text):
+    @staticmethod
+    def url_unescape(text):
         return urllib.parse.unquote(text)
 
-    def url_escape(self, text):
+    @staticmethod
+    def url_escape(text):
         return urllib.parse.quote(text, safe='~-._')
 
-    def url_format_params(self, params):
+    @staticmethod
+    def url_format_params(params):
         param_fragments = []
         for param in sorted(params.items(), key=lambda x: x[0]):
-            param_fragments.append('%s=%s' % (param[0], self.url_escape(param[1])))
+            param_fragments.append('%s=%s' % (param[0], OAUTH2.url_escape(param[1])))
         return '&'.join(param_fragments)
 
-    def command_to_url(self, command):
-        return '%s/%s' % (self.GOOGLE_ACCOUNTS_BASE_URL, command)
+    @staticmethod
+    def command_to_url(command):
+        return f'{GOOGLE_ACCOUNTS_BASE_URL}/{command}'
 
-    def generate_oauth2_string(self, access_token, as_base64=False):
-        auth_string = 'user=%s\1auth=Bearer %s\1\1' % (self.username, access_token)
+    @staticmethod
+    def generate_oauth2_string(access_token, as_base64=False):
+        auth_string = f'user={EMAIL}\1auth=Bearer {access_token}\1\1'
         if as_base64:
             auth_string = base64.b64encode(auth_string.encode('ascii')).decode('ascii')
         return auth_string
@@ -120,18 +122,20 @@ class OAUTHHelper:
     def generate_permission_url(self, scope='https://mail.google.com/'):
         params = {}
         params['client_id'] = self.secrets['google_client_id']
-        params['redirect_uri'] = self.REDIRECT_URI
+        params['redirect_uri'] = GOOGLE_REDIRECT_URI
         params['scope'] = scope
         params['response_type'] = 'code'
         params['ack_oob_shutdown'] = '2022-10-03'
-        return '%s?%s' % (self.command_to_url('o/oauth2/auth'), self.url_format_params(params))
+        request_url = OAUTH2.command_to_url('o/oauth2/auth')
+        request_params = OAUTH2.url_format_params(params)
+        return f'{request_url}?{request_params}'
 
     def call_authorize_tokens(self, authorization_code):
         params = {}
         params['client_id'] = self.secrets['google_client_id']
         params['client_secret'] = self.secrets['google_client_secret']
         params['code'] = authorization_code
-        params['redirect_uri'] = self.REDIRECT_URI
+        params['redirect_uri'] = GOOGLE_REDIRECT_URI
         params['grant_type'] = 'authorization_code'
         request_url = self.command_to_url('o/oauth2/token')
         response = urllib.request.urlopen(request_url, urllib.parse.urlencode(params).encode('UTF-8')).read().decode('UTF-8')
@@ -164,11 +168,11 @@ class OAUTHHelper:
         print('Set the following as your GOOGLE_REFRESH_TOKEN:', refresh_token)
         self.secrets['google_refresh_token'] = refresh_token
 
-        input('confirm delete cred backup')
-        remove(OAUTH + '.old')
-        rename(OAUTH, OAUTH + '.old')
+        input('press enter to confirm delete cred backup')
+        remove(OAUTH_PATH + '.old')
+        rename(OAUTH_PATH, OAUTH_PATH + '.old')
 
-        with open(OAUTH, 'w') as fp:
+        with open(OAUTH_PATH, 'w') as fp:
             json.dump(self.secrets, fp)
 
 class IMTP:
@@ -289,7 +293,7 @@ if __name__ == '__main__':
         elif k in ('-x', '--resend'):
             # search the sent inbox for <email> | "<email>,<subject>"
             args = v.split(',')
-            inbox = IMTP(OAUTHHelper())
+            inbox = IMTP(OAUTH2())
             results = inbox.search(args[0], args[1]) if len(args) == 2 else inbox.search(v)
 
             for fields,body in results:
@@ -304,7 +308,7 @@ if __name__ == '__main__':
         elif k in ('-g', '--get-token-secrets'):
             # Generate and authorize OAuth2 secrets
             # results will be dumped to OAUTH env
-            OAUTHHelper().get_token_secrets()
+            OAUTH2().get_token_secrets()
             exit(0)
 
     SecretSanta()
