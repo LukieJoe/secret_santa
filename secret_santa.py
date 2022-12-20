@@ -249,48 +249,44 @@ class IMTP:
 
         return results
 
+def print_state():
+    print('DEBUG(%s) ASSIGN_PAIRS(%s) CONTENT(%s) EMAIL(%s) GROUP(%s)\n' % (DEBUG, ASSIGN_PAIRS, CONTENT, EMAIL, GROUP))
+
+def print_help(usage):
+    print('state:\n  ', end='')
+    print_state()
+    print('protip:\n  use -h as last arg to inspect state w/out actually running anything')
+    print('  DEBUG := print statements, wont call send()')
+    print('  PAIRED := match content on %s from rolls')
+    print('  CONTENT := loaded content for email body, from ENV SANTA_CONTENT | SANTA_TEST_CONTENT')
+    print('  EMAIL := the gmail, from ENV SANTA_EMAIL')
+    print('  GROUP := the specified list of participants, from ENV SANTA_GROUP')
+    print()
+    print('usage:')
+    for i in usage: print('  --%s' % i)
+    print()
+    print('source .santa/notes')
+    exit(0)
+
 if __name__ == '__main__':
 
-    state_format = 'CLIENT(%s) DEBUG(%s) CONTENT(%s) PAIRED(%s) EMAIL(%s) GROUP(%s)\n'
-
-    usage = ['help', 'with-client', 'no-client', 'test', 'full', 'debug', 'release', 'send=', 'content=', 'paired', 'unpaired', 'group=', 'resend=', 'get-token-secrets']
-    opts, _ = getopt(argv[1:], 'hwntfdrs:c:pug:x:z', usage)
+    usage = ['help', 'get-token-secrets', 'dryrun', 'full', 'release', 'send=', 'resend=']
+    opts, _ = getopt(argv[1:], 'hgdfrs:x:', usage)
     for k,v in opts:
-        if k in ('-t', '--test'): CONTENT, ASSIGN_PAIRS = DRYRUN
-        elif k in ('-f', '--full'): CONTENT, ASSIGN_PAIRS = FULL_CONTENT
-        elif k in ('-c', '--content'): CONTENT = v
-        elif k in ('-u', '--unpaired'): ASSIGN_PAIRS = False
-        elif k in ('-p', '--paired'): ASSIGN_PAIRS = True
-        elif k in ('-d', '--debug'): DEBUG = True
+        if k in ('-f', '--full'): CONTENT, ASSIGN_PAIRS = FULL_CONTENT
+        elif k in ('-d', '--dryrun'): CONTENT, ASSIGN_PAIRS = DRYRUN
         elif k in ('-r', '--release'): DEBUG = False
-        elif k in ('-n', '--no-client'): CLIENT = False
-        elif k in ('-w', '--with-client'): CLIENT = True
-        elif k in ('-g', '--group'): GROUP = v
-        elif k in ('-h', '--help'):
-            print('state:\n  ', state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, GROUP))
-            print('protip:\n  use -h as last arg to inspect state w/out actually running anything')
-            print('  CLIENT := calls SecretSanta()')
-            print('  DEBUG := print statements, wont call send()')
-            print('  CONTENT := loaded content for email body')
-            print('  PAIRED := match content on %s from rolls')
-            print('  GROUP := the specified list of participants')
-            print()
-            print('usage:')
-            for i in usage: print('  -%s, --%s' % (i[0], i))
-            print()
-            print('source .santa/notes')
-            exit(0)
+        elif k in ('-h', '--help'): print_help(usage)
 
-    print(state_format % (CLIENT, DEBUG, CONTENT, ASSIGN_PAIRS, EMAIL, GROUP))
+    if len(argv) == 1: print_help(usage)
+    print_state()
 
     # complex operations
     for k,v in opts:
         if k in ('-s', '--send'):
-            CLIENT = False
             send(v, 'A Test %s' % year(), get_content())
-
+            exit(0)
         elif k in ('-x', '--resend'):
-            CLIENT = False
             # search the sent inbox for <email> | "<email>,<subject>"
             args = v.split(',')
             inbox = IMTP(OAUTHHelper())
@@ -304,12 +300,13 @@ if __name__ == '__main__':
                 preview  = len(shame) + 30 # get a nice window that doesnt reveal too much
                 send(new_to, new_subj, new_body, preview=preview)
 
-        elif k in ('-z', '--get-token-secrets'):
-            CLIENT = False
+            exit(0)
+        elif k in ('-g', '--get-token-secrets'):
             # Generate and authorize OAuth2 secrets
             # results will be dumped to OAUTH env
             OAUTHHelper().get_token_secrets()
+            exit(0)
 
-    if CLIENT: SecretSanta()
+    SecretSanta()
 
     print( '##--DONE--##' )

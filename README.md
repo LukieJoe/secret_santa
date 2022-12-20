@@ -26,10 +26,10 @@ SANTA_GROUP=<DBNAME> ./dbtool.py <name> <email>
 
 sample usage. remove `r` flag for dry run
 ```
-./secret_santa -z           # get token secrets for SANTA_EMAIL and dump into SANTA_OAUTH, must happen first
-./secret_santa -rts <email> # send test content to email
+./secret_santa -g           # get token secrets for SANTA_EMAIL and dump into SANTA_OAUTH, must happen first
+./secret_santa -rds <email> # send test content to email
 ./secret_santa -rfs <email> # send full content to email
-./secret_santa -rt          # send the test content to all participants
+./secret_santa -rd          # send the test content to all participants
 ./secret_santa -rf          # send the full content to all participants
 ./secret_santa -rx <email>  # resend content for <email> to <email> with some spite
 ```
